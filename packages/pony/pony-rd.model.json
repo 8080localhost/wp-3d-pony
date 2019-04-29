@@ -1,0 +1,8 @@
+{
+    "type": "Live2D Model Setting", 
+    "name": "Pony", 
+    "model": "moc/Pony.moc", 
+    "textures": [
+        "moc/pony/rd.png"
+    ]
+}
