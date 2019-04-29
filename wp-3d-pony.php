@@ -1,17 +1,15 @@
 <?php
 /*
 Plugin Name: WP 3D Pony
-Plugin URI: https://github.com/juzeon/wp-3d-pony/
+Plugin URI: https://github.com/juzeon/wp-3d-pony
 Description: 3D MLP:FiM pony based on live2dw and Frash's model.
 Version: 1.1
 Author: juzeon
-Author URI: https://github.com/juzeon/
+Author URI: http://www.skyju.cc
 */
 class WP_3D_Pony{
 	public $options;
-	public $assetUrl;
 	public function __construct(){
-		$this->assetUrl=substr(wp_upload_dir()['baseurl'], strlen(home_url().'/')).'/wp-3d-pony/';
 		$this->options=get_option('wp_3d_pony');
 		$this->firstLoad();
 		add_action('admin_menu',function(){
@@ -24,7 +22,12 @@ class WP_3D_Pony{
 		if('POST' == $_SERVER['REQUEST_METHOD']){
 			update_option('wp_3d_pony', array(
 			'firstLoad'=>true,
+			'name'=>esc_attr($_POST['name']),
 			'texture'=>esc_attr($_POST['texture']),
+			'model'=>esc_attr($_POST['model']),
+			'rand'=>($_POST['rand'])?true:false,
+			'randJson'=>esc_attr($_POST['randJson']),
+			'json'=>esc_attr($_POST['json']),
 			'position'=>esc_attr($_POST['position']),
 			'width'=>floatval($_POST['width']),
 			'height'=>floatval($_POST['height']),
@@ -44,17 +47,17 @@ class WP_3D_Pony{
    		</div>
 			<?php
 		}
+		
 		include plugin_dir_path(__FILE__).'settings.php';
 	}
 	public function firstLoad(){
 		if($this->options['firstLoad']!=true){
-			if(!file_exists(wp_upload_dir()['basedir'].'/wp-3d-pony'))mkdir(wp_upload_dir()['basedir'].'/wp-3d-pony');
-			copy(plugin_dir_path(__FILE__).'source/derpy.png',wp_upload_dir()['basedir'].'/wp-3d-pony/derpy.png');
-			copy(plugin_dir_path(__FILE__).'source/rd.png',wp_upload_dir()['basedir'].'/wp-3d-pony/rd.png');
-			copy(plugin_dir_path(__FILE__).'source/Pony.moc',wp_upload_dir()['basedir'].'/wp-3d-pony/Pony.moc');
 			update_option('wp_3d_pony', array(
 			'firstLoad'=>true,
-			'texture'=>'rd.png',
+			'name'=>'Pony',
+			'texture'=>'pony-rd.png',
+			'model'=>'Pony.moc',
+			'json'=>'/wp-content/plugins/wp-3d-pony/packages/pony/pony-rd.model.json',
 			'position'=>'right',
 			'width'=>80,
 			'height'=>160,
@@ -70,45 +73,48 @@ class WP_3D_Pony{
 			$this->options=get_option('wp_3d_pony');
 		}
 	}
+	
 	public function ponyModel(){
 		?>
 		{
 	"type": "Live2D Model Setting",
-	"name": "Pony",
-	"model": "<?php echo $this->assetUrl.'Pony.moc' ?>",
+	"name": "<?php echo $this->options['name'] ?>",
+	"model": "wp-content/plugins/wp-3d-pony/live2dw/assets/moc/<?php echo $this->options['model'] ?>",
 	"textures": [
-		"<?php echo $this->assetUrl.$this->options['texture'] ?>"
+		"wp-content/plugins/wp-3d-pony/live2dw/assets/img/<?php echo $this->options['texture'] ?>"
 	]
 }
 		<?php
 		exit;
 	}
+	
 	public function head(){
 			?>
-			<script src="<?php echo plugin_dir_url(__FILE__).'live2dw/lib/L2Dwidget.min.js' ?>"></script>
-		<script>
-			L2Dwidget.init({
-				"model": {
-					"jsonPath": "<?php echo home_url().'/?ponymodel=1' ?>",
-					"scale": <?php echo $this->options['scale'] ?>
-				},
-				"display": {
-					"position": "<?php echo $this->options['position'] ?>",
-					"width": <?php echo $this->options['width'] ?>,
-					"height": <?php echo $this->options['height'] ?>,
-					"hOffset": <?php echo $this->options['hOffset'] ?>,
-					"vOffset": <?php echo $this->options['vOffset'] ?>
-				},
-				"mobile": {
-					"show": <?php echo ($this->options['mobile'])?'true':'false' ?>,
-					"scale": <?php echo $this->options['mscale'] ?>
-				},
-				"react":{
-					"opacityDefault":<?php echo $this->options['opacityDefault'] ?>,
-					"opacityOnHover":<?php echo $this->options['opacityOnHover'] ?>
-				}
-			});
-		</script>
+<script src="<?php echo plugin_dir_url(__FILE__).'live2dw/lib/L2Dwidget.min.js' ?>"></script>
+<script>
+	L2Dwidget.init({
+		"model": {
+			//"jsonPath": "<?php echo home_url().'/?ponymodel=1' ?>",
+			"jsonPath": "<?php if($this->options['rand']){$jsonArray = explode(',',$this->options['randJson']); shuffle($jsonArray); echo $jsonArray[0];}else{echo $this->options['json'];} ?>",
+			"scale": <?php echo $this->options['scale'] ?>
+		},
+		"display": {
+			"position": "<?php echo $this->options['position'] ?>",
+			"width": <?php echo $this->options['width'] ?>,
+			"height": <?php echo $this->options['height'] ?>,
+			"hOffset": <?php echo $this->options['hOffset'] ?>,
+			"vOffset": <?php echo $this->options['vOffset'] ?>
+		},
+		"mobile": {
+			"show": <?php echo ($this->options['mobile'])?'true':'false' ?>,
+			"scale": <?php echo $this->options['mscale'] ?>
+		},
+		"react":{
+			"opacityDefault":<?php echo $this->options['opacityDefault'] ?>,
+			"opacityOnHover":<?php echo $this->options['opacityOnHover'] ?>
+		}
+	});
+</script>
 			<?php
 		}
 }
